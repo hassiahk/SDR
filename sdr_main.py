@@ -2,7 +2,7 @@
 import os
 from utils.pytorch_lightning_utils.pytorch_lightning_utils import load_params_from_checkpoint
 import torch
-from pytorch_lightning.profiler.profilers import SimpleProfiler
+from pytorch_lightning.profiler import SimpleProfiler
 from utils.pytorch_lightning_utils.callbacks import RunValidationOnStart
 from utils import switch_functions
 import pytorch_lightning
@@ -51,7 +51,8 @@ def main_train(model_class_pointer, hparams,parser):
             save_last=True,
             mode="min" if "acc" not in hparams.metric_to_track else "max",
             monitor=hparams.metric_to_track,
-            filepath=os.path.join(model.hparams.hparams_dir, "{epoch}"),
+            dirpath=model.hparams.hparams_dir,
+            filename="{epoch}",
             verbose=True,
         ),
         logger=logger,
