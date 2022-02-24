@@ -91,7 +91,7 @@ class DocEmbeddingTemplate(LightningModule):
         self.hparams.mode = "test"
 
     def on_epoch_end_generic(self):
-        if self.trainer.running_sanity_check:
+        if self.trainer.sanity_checking:
             return
         logs = getattr(self, f"{self.hparams.mode}_logs", None)
 
@@ -115,7 +115,7 @@ class DocEmbeddingTemplate(LightningModule):
         self.on_epoch_end_generic()
 
     def on_validation_epoch_end(self) -> None:
-        if self.trainer.running_sanity_check:
+        if self.trainer.sanity_checking:
             return
         if self.current_epoch % 10 == 0:
             self.logger.experiment.add_text("Profiler", self.trainer.profiler.summary(), global_step=self.global_step)
