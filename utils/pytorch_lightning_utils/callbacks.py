@@ -7,4 +7,7 @@ class RunValidationOnStart(Callback):
         pass
 
     def on_train_start(self, trainer: Trainer, pl_module):
-        return trainer.run_evaluation()
+        trainer.validating = True
+        trainer.reset_val_dataloader()
+        trainer.val_loop.run()
+        trainer.training = True
