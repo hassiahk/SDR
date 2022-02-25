@@ -9,5 +9,5 @@ class RunValidationOnStart(Callback):
     def on_train_start(self, trainer: Trainer, pl_module):
         trainer.validating = True
         trainer.reset_val_dataloader()
-        trainer.val_loop.run()
+        trainer.fit_loop.epoch_loop.val_loop.run()
         trainer.training = True
