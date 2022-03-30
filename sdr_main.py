@@ -65,7 +65,7 @@ def main_train(model_class_pointer, hparams,parser):
         check_val_every_n_epoch=hparams.check_val_every_n_epoch,
         profiler=SimpleProfiler(),
         accumulate_grad_batches=hparams.accumulate_grad_batches,
-        reload_dataloaders_every_epoch=True,
+        reload_dataloaders_every_n_epochs=1,
         # load
         resume_from_checkpoint=hparams.resume_from_checkpoint,
     )
