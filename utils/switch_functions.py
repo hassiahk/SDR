@@ -18,11 +18,10 @@ def model_class_pointer(task_name, arch):
 
     """
 
-    if task_name == "document_similarity":
-        if arch == "SDR":
-            from models.SDR.SDR import SDR
+    if task_name == "document_similarity" and arch == "SDR":
+        from models.SDR.SDR import SDR
 
-            return SDR
+        return SDR
     raise Exception("Unkown task")
 
 

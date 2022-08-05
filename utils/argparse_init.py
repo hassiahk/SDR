@@ -41,7 +41,7 @@ def default_arg_parser(description="", conflict_handler="resolve", parents=[], i
         if len(parents) != 0 and parents[0] is not None and parents[0].description is not None
         else description
     )
-    parser = argparse.ArgumentParser(
+    return argparse.ArgumentParser(
         description=description,
         add_help=is_lowest_leaf,
         formatter_class=ArgumentDefaultsHelpFormatter,
@@ -49,15 +49,13 @@ def default_arg_parser(description="", conflict_handler="resolve", parents=[], i
         parents=parents,
     )
 
-    return parser
-
 def get_non_default(parsed,parser):
-    non_default = {
+    return {
         opt.dest: getattr(parsed, opt.dest)
         for opt in parser._option_string_actions.values()
-        if hasattr(parsed, opt.dest) and opt.default != getattr(parsed, opt.dest)
+        if hasattr(parsed, opt.dest)
+        and opt.default != getattr(parsed, opt.dest)
     }
-    return non_default
 
     
 def init_parse_argparse_default_params(parser, dataset_name=None, arch=None):

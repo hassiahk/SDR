@@ -62,15 +62,17 @@ class SDR(TransformersBase):
     def test_step(self, batch, batch_idx):
         section_out = []
         for section in batch[0]:  # batch=1 for test
-            sentences=[]
             sentences_embed_per_token = [
                 self.model(
                     sentence.unsqueeze(0), masked_lm_labels=None, run_similarity=False
                 )[5].squeeze(0)
                 for sentence in section[0][:8]
             ]
-            for idx, sentence in enumerate(sentences_embed_per_token):
-                sentences.append(sentence[: section[2][idx]].mean(0))  # We take the non-padded tokens and mean them
+            sentences = [
+                sentence[: section[2][idx]].mean(0)
+                for idx, sentence in enumerate(sentences_embed_per_token)
+            ]
+
             section_out.append(torch.stack(sentences))
         return (section_out, batch[0][0][1][0])  # title name
 
@@ -83,7 +85,6 @@ class SDR(TransformersBase):
     ):
         mode = "train" if is_train else "val"
 
-        trackes = {}
         lm_pred = np.argmax(outputs[3].cpu().detach().numpy(), axis=2)
         labels_numpy = labels.cpu().numpy()
         labels_non_zero = labels_numpy[np.array(labels_numpy != -100)] if np.any(labels_numpy != -100) else np.zeros(1)
@@ -92,9 +93,7 @@ class SDR(TransformersBase):
             metrics_utils.simple_accuracy(lm_pred_non_zero, labels_non_zero), device=outputs[3].device,
         ).reshape((1, -1))
 
-        trackes["lm_acc_{}".format(mode)] = lm_acc.detach().cpu()
-
-        return trackes
+        return {f"lm_acc_{mode}": lm_acc.detach().cpu()}
 
     def test_epoch_end(self, outputs, recos_path=None):
         if self.trainer.checkpoint_callback.last_model_path == "" and self.hparams.resume_from_checkpoint is None:
@@ -141,7 +140,7 @@ class SDR(TransformersBase):
                 f"_numSamples_{self.hparams.test_sample_size}",
             )
             torch.save(recos, recos_path)
-            print("Saving recos in {}".format(recos_path))
+            print(f"Saving recos in {recos_path}")
 
             setattr(self.hparams, "recos_path", recos_path)
         return
@@ -155,13 +154,17 @@ class SDR(TransformersBase):
                 length_before_new_iter=(self.hparams.limit_train_batches) * self.hparams.train_batch_size,
             )
 
-            loader = DataLoader(
+            return DataLoader(
                 self.train_dataset,
                 num_workers=self.hparams.num_data_workers,
                 sampler=sampler,
                 batch_size=self.hparams.train_batch_size,
-                collate_fn=partial(reco_sentence_collate, tokenizer=self.tokenizer,),
+                collate_fn=partial(
+                    reco_sentence_collate,
+                    tokenizer=self.tokenizer,
+                ),
             )
+
 
         elif mode == "val":
             sampler = MPerClassSamplerDeter(
@@ -171,22 +174,28 @@ class SDR(TransformersBase):
                 batch_size=self.hparams.val_batch_size,
             )
 
-            loader = DataLoader(
+            return DataLoader(
                 self.val_dataset,
                 num_workers=self.hparams.num_data_workers,
                 sampler=sampler,
                 batch_size=self.hparams.val_batch_size,
-                collate_fn=partial(reco_sentence_collate, tokenizer=self.tokenizer,),
+                collate_fn=partial(
+                    reco_sentence_collate,
+                    tokenizer=self.tokenizer,
+                ),
             )
 
+
         else:
-            loader = DataLoader(
+            return DataLoader(
                 self.test_dataset,
                 num_workers=self.hparams.num_data_workers,
                 batch_size=self.hparams.test_batch_size,
-                collate_fn=partial(reco_sentence_test_collate, tokenizer=self.tokenizer,),
+                collate_fn=partial(
+                    reco_sentence_test_collate,
+                    tokenizer=self.tokenizer,
+                ),
             )
-        return loader
 
     @staticmethod
     def add_model_specific_args(parent_parser, task_name, dataset_name, is_lowest_leaf=False):

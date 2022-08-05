@@ -63,10 +63,10 @@ class DocEmbeddingTemplate(LightningModule):
         return self.training_step(batch, batch_idx, mode=mode)
 
     def log_step(self, all):
-        if not (
+        if (
             getattr(self.hparams, f"{self.hparams.mode}_batch_size")
             % (getattr(self.hparams, f"{self.hparams.mode}_log_every_n_steps"))
-            == 0
+            != 0
         ):
             return
         for k, v in all.items():
@@ -102,9 +102,7 @@ class DocEmbeddingTemplate(LightningModule):
         for lst in dict_of_lists:
             dict_of_lists[lst] = list(filter(lambda x: not pd.isnull(x), dict_of_lists[lst]))
         for key, lst in dict_of_lists.items():
-            s = 0
-            for item in lst:
-                s += item.sum()
+            s = sum(item.sum() for item in lst)
             name = f"{prefix}_{key}_epoch"
             val = s / len(lst)
             self.logger.experiment.add_scalar(name, val, global_step=self.global_step)
@@ -139,11 +137,23 @@ class DocEmbeddingTemplate(LightningModule):
         no_decay = ["bias", "LayerNorm.weight"]
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)],
+                "params": [
+                    p
+                    for n, p in self.model.named_parameters()
+                    if all(nd not in n for nd in no_decay)
+                ],
                 "weight_decay": self.hparams.weight_decay,
             },
-            {"params": [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)], "weight_decay": 0.0},
+            {
+                "params": [
+                    p
+                    for n, p in self.model.named_parameters()
+                    if any(nd in n for nd in no_decay)
+                ],
+                "weight_decay": 0.0,
+            },
         ]
+
 
         optimizer = switch_functions.choose_optimizer(self.hparams, optimizer_grouped_parameters)
         scheduler = switch_functions.choose_scheduler(

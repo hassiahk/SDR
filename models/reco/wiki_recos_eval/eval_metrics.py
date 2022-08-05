@@ -55,17 +55,19 @@ def calculate_mpr(
                 continue
             curr_gts.append(recommended_idx_ls[0])
             percentiles.extend((recommended_idx_ls[0] / len(recommandations),) * article_article_gt[wiki_title][gt_title])
-            text.append("gt: {}    gt place: {}".format(gt_title, recommended_idx_ls[0]))
+            text.append(f"gt: {gt_title}    gt place: {recommended_idx_ls[0]}")
 
-        if len(curr_gts) > 0:
+        if curr_gts:
             print(
-                "title: {}\n".format(wiki_title)
-                + "\n".join(text)
-                + "\ntopk: {}\n\n\n".format([titles[reco_i] for reco_i in recommandations[:10]])
+                (
+                    (f"title: {wiki_title}\n" + "\n".join(text))
+                    + f"\ntopk: {[titles[reco_i] for reco_i in recommandations[:10]]}\n\n\n"
+                )
             )
 
+
     percentiles = percentiles if percentiles != [] else [0]
-    print("percentiles_mean:{}\n\n\n\n".format(sum(percentiles) / len(percentiles)))
+    print(f"percentiles_mean:{sum(percentiles) / len(percentiles)}\n\n\n\n")
     return percentiles, sum(percentiles) / len(percentiles)
 
 
@@ -93,19 +95,21 @@ def calculate_mrr(
                 top = recommended_idx_ls[0]
             if recommended_idx_ls.shape[0] == 0:
                 continue
-            text.append("gt: {}    gt place: {} ".format(gt_title, recommended_idx_ls[0]))
+            text.append(f"gt: {gt_title}    gt place: {recommended_idx_ls[0]} ")
 
         if top == 0:
             top = 1
 
-        if len(text) > 0:
+        if text:
             recepricals.append(1 / (top))
             text.append(f"\n receprical: {recepricals[-1]}")
             print(
-                "title: {}\n".format(wiki_title)
-                + "\n".join(text)
-                + "\ntopk: {}\n\n\n".format([titles[reco_i] for reco_i in recommandations[:10]])
+                (
+                    (f"title: {wiki_title}\n" + "\n".join(text))
+                    + f"\ntopk: {[titles[reco_i] for reco_i in recommandations[:10]]}\n\n\n"
+                )
             )
+
 
     recepricals = recepricals if recepricals != [] else [0]
     print(f"Recepricle mean:{sum(recepricals) / len(recepricals)}")
@@ -123,11 +127,11 @@ def calculate_mean_hit_rate(
     rate_thresulds=[100],
     titles=[],
 ):
-    mean_hits = [[] for i in rate_thresulds]
+    mean_hits = [[] for _ in rate_thresulds]
     for reco_idx in tqdm(input_recommandations):
         wiki_title = titles[reco_idx]
         curr_gts, text = [], []
-        hit_by_rate = [0 for i in rate_thresulds]
+        hit_by_rate = [0 for _ in rate_thresulds]
         recommandations = input_recommandations[reco_idx][1]
         for gt_title in article_article_gt[wiki_title].keys():
 
@@ -141,7 +145,7 @@ def calculate_mean_hit_rate(
                     hit_by_rate[thr_idx] += 1
             text.append(f"gt: {gt_title}    gt place: {recommended_idx_ls}")
 
-        if len(text) > 0:
+        if text:
             for thr_idx, thresuld in enumerate(rate_thresulds):
                 print(
                     f"title: {wiki_title} Hit rate at {thresuld}: {hit_by_rate[thr_idx]} \n \n {''.join(text)} \n topk: {[titles[reco_i] for reco_i in recommandations[:10]]}\n\n\n"
@@ -149,8 +153,13 @@ def calculate_mean_hit_rate(
                 hit_mean = hit_by_rate[thr_idx] / len(article_article_gt[wiki_title].keys()) if hit_by_rate[thr_idx] > 0 else 0
                 mean_hits[thr_idx].append(hit_mean)
 
-    mean_hits = mean_hits if mean_hits != [[] for rate_thresuld in rate_thresulds] else [[0] for rate_thresuld in rate_thresulds]
+    mean_hits = (
+        mean_hits
+        if mean_hits != [[] for _ in rate_thresulds]
+        else [[0] for _ in rate_thresulds]
+    )
+
     mean_hit = [sum(mean_hit) / len(mean_hit) for mean_hit in mean_hits]
-    mean_hits_with_thresuld = [(thresuld, mean) for (thresuld, mean) in zip(*[rate_thresulds, mean_hit])]
+    mean_hits_with_thresuld = list(zip(*[rate_thresulds, mean_hit]))
     print(f"Hit rate mean:{mean_hits_with_thresuld}")
     return mean_hits, mean_hits_with_thresuld

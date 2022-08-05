@@ -33,7 +33,6 @@ class WikipediaTextDatasetParagraphsSentences(Dataset):
 
         self.hparams = hparams
 
-        max_article_len,max_sentences, max_sent_len = int(1e6), 16, 10000
         block_size = min(block_size, tokenizer.max_len_sentences_pair) if tokenizer is not None else block_size
         self.block_size = block_size
         self.tokenizer = tokenizer
@@ -48,17 +47,17 @@ class WikipediaTextDatasetParagraphsSentences(Dataset):
             self.examples = []
             self.indices_map = []
 
+            max_article_len,max_sentences, max_sent_len = int(1e6), 16, 10000
             for idx_article, article in enumerate(tqdm(all_articles)):
                 this_sample_sections = []
                 title, sections = article[0], ast.literal_eval(article[1])
                 valid_sections_count = 0
-                for section_idx, section in enumerate(sections):
+                for section in sections:
                     this_sections_sentences = []
                     if section[1] == "":
                         continue
-                    valid_sentences_count = 0
-                    title_with_base_title = "{}:{}".format(title, section[0])
-                    for sent_idx, sent in enumerate(nltk.sent_tokenize(section[1][:max_article_len])[:max_sentences]):
+                    title_with_base_title = f"{title}:{section[0]}"
+                    for valid_sentences_count, sent in enumerate(nltk.sent_tokenize(section[1][:max_article_len])[:max_sentences]):
                         tokenized_desc = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(json.dumps(sent[:max_sent_len])))[
                             :block_size
                         ]
@@ -73,7 +72,6 @@ class WikipediaTextDatasetParagraphsSentences(Dataset):
                             ),
                         )
                         self.indices_map.append((idx_article, valid_sections_count, valid_sentences_count))
-                        valid_sentences_count += 1
                     this_sample_sections.append((this_sections_sentences, title_with_base_title))
                     valid_sections_count += 1
                 self.examples.append((this_sample_sections, title))
@@ -96,9 +94,7 @@ class WikipediaTextDatasetParagraphsSentences(Dataset):
                 val_indices = np.setdiff1d(list(range(len(all_articles))), train_indices)
                 indices = train_indices if mode == "train" else val_indices
 
-            articles = []
-            for i in indices:
-                articles.append(all_articles[i])
+            articles = [all_articles[i] for i in indices]
             all_articles = articles
             pickle.dump(all_articles, open(proccessed_path, "wb"))
             print(f"\nsaved dataset at {proccessed_path}")
@@ -152,21 +148,26 @@ class WikipediaTextDatasetParagraphsSentencesTest(WikipediaTextDatasetParagraphs
     def __getitem__(self, item):
         sections = []
         for idx_section, section in enumerate(self.examples[item][0]):
-            sentences = []
-            for idx_sentence, sentence in enumerate(section[0]):
-                sentences.append(
-                    (
-                        torch.tensor(self.tokenizer.build_inputs_with_special_tokens(sentence[0]), dtype=torch.long,),
-                        self.examples[item][1],
-                        section[1],
-                        sentence[1],
-                        item,
-                        idx_section,
-                        idx_sentence,
-                        item,
-                        self.labels[item],
-                    )
+            sentences = [
+                (
+                    torch.tensor(
+                        self.tokenizer.build_inputs_with_special_tokens(
+                            sentence[0]
+                        ),
+                        dtype=torch.long,
+                    ),
+                    self.examples[item][1],
+                    section[1],
+                    sentence[1],
+                    item,
+                    idx_section,
+                    idx_sentence,
+                    item,
+                    self.labels[item],
                 )
+                for idx_sentence, sentence in enumerate(section[0])
+            ]
+
             sections.append(sentences)
         return sections
 
