@@ -69,11 +69,15 @@ def main_train(model_class_pointer, hparams,parser):
         # load
         resume_from_checkpoint=hparams.resume_from_checkpoint,
     )
-    if(not hparams.test_only):
+    if (not hparams.test_only):
         trainer.fit(model)
-    else:
-        if(hparams.resume_from_checkpoint is not None):
-            model = model.load_from_checkpoint(hparams.resume_from_checkpoint,hparams=hparams, map_location=torch.device(f"cpu"))
+    elif (hparams.resume_from_checkpoint is not None):
+        model = model.load_from_checkpoint(
+            hparams.resume_from_checkpoint,
+            hparams=hparams,
+            map_location=torch.device("cpu"),
+        )
+
     trainer.test(model)
 
 

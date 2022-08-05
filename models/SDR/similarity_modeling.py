@@ -46,7 +46,10 @@ class SimilarityModeling(BertPreTrainedModel):
                 distance=CosineSimilarity(),
             )
 
-        if getattr(self.hparams, "metric_loss_func", "ContrastiveLoss") in ["ContrastiveLoss", "CosineLoss"]:
+        if getattr(self.hparams, "metric_loss_func", "ContrastiveLoss") in {
+            "ContrastiveLoss",
+            "CosineLoss",
+        }:
             self.similarity_loss_func = losses.ContrastiveLoss(
                 pos_margin=pos_margin, neg_margin=neg_margin, distance=self.metric
             )  # |np-sp|_+ + |sn-mn|_+ so for cossim we do pos_m=1 and neg_m=0

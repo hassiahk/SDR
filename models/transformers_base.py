@@ -31,12 +31,15 @@ class TransformersBase(DocEmbeddingTemplate):
             self.tokenizer = self.tokenizer_class.from_pretrained(self.hparams.arch_or_path)
         else:
             raise ValueError(
-                "You are instantiating a new {} tokenizer. This is not supported, but you can do it from another script, save it,"
-                "and load it from here, using --tokenizer_name".format(self.tokenizer_class.__name__)
+                f"You are instantiating a new {self.tokenizer_class.__name__} tokenizer. This is not supported, but you can do it from another script, save it,and load it from here, using --tokenizer_name"
             )
+
         self.hparams.tokenizer_pad_id = self.tokenizer.pad_token_id
         self.model = self.model_class.from_pretrained(
-            self.hparams.config_name, from_tf=bool(".ckpt" in self.hparams.config_name), config=self.config, hparams=self.hparams
+            self.hparams.config_name,
+            from_tf=".ckpt" in self.hparams.config_name,
+            config=self.config,
+            hparams=self.hparams,
         )
 
     @staticmethod
